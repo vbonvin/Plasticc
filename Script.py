@@ -4,7 +4,8 @@ import pandas as pd
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
-
+import matplotlib.pyplot as plt
+from keras.utils import plot_model
 
 data = util.readpickle('training_samples.pkl')
 
@@ -49,21 +50,54 @@ y_test = keras.utils.to_categorical(y_test, num_classes=15)
 
 model = keras.Sequential([
     keras.layers.Dense(480, input_shape=(960,), activation=tf.nn.relu),
+    keras.layers.BatchNormalization(),
+    keras.layers.Dropout(0.5),
     keras.layers.Dense(240, activation=tf.nn.relu),
+    keras.layers.BatchNormalization(),
+    keras.layers.Dropout(0.5),
     keras.layers.Dense(120, activation=tf.nn.relu),
+    keras.layers.BatchNormalization(),
+    keras.layers.Dropout(0.5),
     keras.layers.Dense(60, activation=tf.nn.relu),
+    keras.layers.BatchNormalization(),
     keras.layers.Dense(15, activation=tf.nn.softmax)
 ])
 
-model.compile(optimizer='rmsprop',
-              loss='categorical_crossentropy',
-              metrics=['accuracy'])
 
 """Network Training"""
 
-model.fit(x_train, y_train, epochs=10, batch_size=32)
+ada = keras.optimizers.Adagrad(lr=0.01, epsilon=None, decay=0.01) #decay lr *= (1. / (1. + self.decay * self.iterations))
+rmsprop = keras.optimizers.RMSprop(lr=0.001, decay=0.01)
+model.compile(optimizer=rmsprop,
+              loss='categorical_crossentropy',
+              metrics=['accuracy'])
+
+history = model.fit(x_train, y_train, epochs=100, validation_split=0.1, batch_size=32, verbose=1)
 
 score = model.evaluate(x_test, y_test, batch_size=100)
+
+"""Network Evaluation"""
+
+plot_model(model, to_file='model.png')
+
+print(score)
+
+# Plot training & validation accuracy values
+plt.plot(history.history['acc'])
+plt.plot(history.history['val_acc'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Test'], loc='upper left')
+
+# Plot training & validation loss values
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Test'], loc='upper left')
+plt.show()
 
 # Train the model, iterating on the data in batches of 32 samples
 #for i in range(10):
