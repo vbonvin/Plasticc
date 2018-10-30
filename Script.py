@@ -9,6 +9,9 @@ from keras.utils import plot_model
 
 data = util.readpickle('training_samples.pkl')
 
+
+#print(data.loc[0])
+
 """Dateset Handling"""
 #Flatten Data into 1D Vector
 #Beginning just fluxes and time data
@@ -23,7 +26,15 @@ data = util.readpickle('training_samples.pkl')
 ##Maximum number of points = 72 , keep around 80 values for even number
 ####max_len = np.max([len(a) for a in arr])
 max_len = 80
-zp_data = data.loc[ :,[u'fluxes_0',u'fluxes_1',u'fluxes_2',u'fluxes_3',u'fluxes_4',u'fluxes_5',u'mjds_0',u'mjds_1',u'mjds_2',u'mjds_3',u'mjds_4',u'mjds_5']].values
+#zp_data = data.loc[ :,[u'gal_b',u'gal_l',u'hostgal_photoz',u'hostgal_photoz_err',u'hostgal_specz',u'fluxerrs_0',
+#                       u'fluxerrs_1',u'fluxerrs_2',u'fluxerrs_3',u'fluxerrs_4',u'fluxerrs_5',u'fluxes_0',u'fluxes_1',
+#                       u'fluxes_2',u'fluxes_3',u'fluxes_4',u'fluxes_5',u'mjds_0',u'mjds_1',u'mjds_2',u'mjds_3',u'mjds_4',
+#                       u'mjds_5']].values
+zp_data = data.loc[ :,[u'fluxerrs_0',
+                       u'fluxerrs_1',u'fluxerrs_2',u'fluxerrs_3',u'fluxerrs_4',u'fluxerrs_5',u'fluxes_0',u'fluxes_1',
+                       u'fluxes_2',u'fluxes_3',u'fluxes_4',u'fluxes_5',u'mjds_0',u'mjds_1',u'mjds_2',u'mjds_3',u'mjds_4',
+                       u'mjds_5']].values
+#print(zp_data)
 ##Zero-padding using Numpy and reshape in 1d vector [:,data]
 zp_data = np.asarray([[np.pad(a, (0, max_len - len(a)), 'constant', constant_values=0) for a in item] for item in zp_data])
 zp_data = zp_data.reshape(zp_data.shape[0],-1)
@@ -49,7 +60,10 @@ y_test = keras.utils.to_categorical(y_test, num_classes=15)
 #Zeropadded ANN
 
 model = keras.Sequential([
-    keras.layers.Dense(480, input_shape=(960,), activation=tf.nn.relu),
+    keras.layers.Dense(960, input_shape=(len(zp_data[0]),), activation=tf.nn.relu),
+    keras.layers.BatchNormalization(),
+    keras.layers.Dropout(0.5),
+    keras.layers.Dense(480, activation=tf.nn.relu),
     keras.layers.BatchNormalization(),
     keras.layers.Dropout(0.5),
     keras.layers.Dense(240, activation=tf.nn.relu),
