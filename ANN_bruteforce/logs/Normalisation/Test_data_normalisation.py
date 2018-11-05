@@ -11,46 +11,18 @@ from util import *
 from tensorflow.keras.models import load_model
 from keras.callbacks import TensorBoard
 
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import minmax_scale
+from sklearn.preprocessing import MaxAbsScaler
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import RobustScaler
+from sklearn.preprocessing import Normalizer
+from sklearn.preprocessing import QuantileTransformer
+from sklearn.preprocessing import PowerTransformer
+
 init_data = util.readpickle('training_samples.pkl')
 
 data = init_data.copy(deep=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-#data = data.append(epurate_sample(data), ignore_index=True)
-
-print(data.loc[:].values.shape)
-
-#print(data.loc[0])
 
 """Dateset Handling"""
 #Flatten Data into 1D Vector
@@ -62,9 +34,16 @@ print(data.loc[:].values.shape)
 # -> Recursive neural network
 
 #Zeropadded ANN
-
 [zp_data,labels] = dataset_handling(data)
 
+print("--------------------")
+print("Playing around with normalisation -> works great http://scikit-learn.org/stable/auto_examples/preprocessing/plot_"
+      "all_scaling.html#sphx-glr-auto-examples-preprocessing-plot-all-scaling-py")
+#zp_data = StandardScaler().fit_transform(zp_data)
+zp_data = QuantileTransformer(output_distribution='uniform').fit_transform(zp_data)
+#zp_data = MinMaxScaler().fit_transform(zp_data)
+#zp_data = QuantileTransformer(output_distribution='normal').fit_transform(zp_data)
+print("What seems to work best here are the quantileTransformer. Not sure if gaussian or constant however. See logs")
 x_train = zp_data
 y_train = labels
 
@@ -93,9 +72,9 @@ model = keras.Sequential([
     keras.layers.Dense(15, activation=tf.nn.softmax)
 ])
 
-del model  # deletes the existing model
+#del model  # deletes the existing model
 
-model = load_model('ANN_3layers_model.h5')
+#model = load_model('ANN_3layers_model.h5')
 
 """Network Training"""
 
@@ -105,12 +84,12 @@ model.compile(optimizer=rmsprop,
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 
-tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=0,
+tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/run_QuantileTransformer_uniform', histogram_freq=0,
           write_graph=True, write_images=True)
 #tensorboard("logs/run_a")
-history = model.fit(x_train, y_train, epochs=10, validation_split=0.1, batch_size=32, verbose=1,callbacks = [tbCallBack])
+history = model.fit(x_train, y_train, epochs=50, validation_split=0.1, batch_size=32, verbose=1,callbacks = [tbCallBack])
 
-model.save('ANN_3layers_model.h5')
+model.save('ANN_3layers_model_normalised.h5')
 
 #score = model.evaluate(x_test, y_test, batch_size=100)
 

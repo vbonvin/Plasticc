@@ -47,17 +47,13 @@ def dataset_handling(data):
                            u'mjds_3', u'mjds_4',
                            u'mjds_5']].values
     ##Zero-padding using Numpy and reshape in 1d vector [:,data]
-    for item in zp_data:
-        for a in item:
-            if isinstance(a, float):
-                #print(a)
-                print(item,a)
     zp_data = np.asarray(
         [[np.pad(a, (0, max_len - len(a)), 'constant', constant_values=0) for a in item] for item in zp_data])
     zp_data = zp_data.reshape(zp_data.shape[0], -1)
     zp_data = np.c_[
         zp_data, data.loc[:, [u'gal_b', u'gal_l', u'hostgal_photoz', u'hostgal_photoz_err', u'hostgal_specz']].values]
-    ##Load labels and convert to integer
+    ##Normalise data to be determined
+        ##Load labels and convert to integer
     labels = data.loc[:, [u'target']].values
     labels = labels.flatten()
     labels_name = np.array([6, 15, 16, 42, 52, 53, 62, 64, 65, 67, 88, 90, 92, 95, 99])
