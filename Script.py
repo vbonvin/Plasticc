@@ -6,9 +6,49 @@ from tensorflow import keras
 import numpy as np
 import matplotlib.pyplot as plt
 from keras.utils import plot_model
+from DataProcessing import dataset_handling
+from util import *
+from tensorflow.keras.models import load_model
+from keras.callbacks import TensorBoard
 
-data = util.readpickle('training_samples.pkl')
+init_data = util.readpickle('training_samples.pkl')
 
+data = init_data.copy(deep=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(init_data), ignore_index=True)
+#data = data.append(epurate_sample(data), ignore_index=True)
+
+print(data.loc[:].values.shape)
 
 #print(data.loc[0])
 
@@ -23,37 +63,13 @@ data = util.readpickle('training_samples.pkl')
 
 #Zeropadded ANN
 
-##Maximum number of points = 72 , keep around 80 values for even number
-####max_len = np.max([len(a) for a in arr])
-max_len = 80
-#zp_data = data.loc[ :,[u'gal_b',u'gal_l',u'hostgal_photoz',u'hostgal_photoz_err',u'hostgal_specz',u'fluxerrs_0',
-#                       u'fluxerrs_1',u'fluxerrs_2',u'fluxerrs_3',u'fluxerrs_4',u'fluxerrs_5',u'fluxes_0',u'fluxes_1',
-#                       u'fluxes_2',u'fluxes_3',u'fluxes_4',u'fluxes_5',u'mjds_0',u'mjds_1',u'mjds_2',u'mjds_3',u'mjds_4',
-#                       u'mjds_5']].values
-zp_data = data.loc[ :,[u'fluxerrs_0',
-                       u'fluxerrs_1',u'fluxerrs_2',u'fluxerrs_3',u'fluxerrs_4',u'fluxerrs_5',u'fluxes_0',u'fluxes_1',
-                       u'fluxes_2',u'fluxes_3',u'fluxes_4',u'fluxes_5',u'mjds_0',u'mjds_1',u'mjds_2',u'mjds_3',u'mjds_4',
-                       u'mjds_5']].values
-#print(zp_data)
-##Zero-padding using Numpy and reshape in 1d vector [:,data]
-zp_data = np.asarray([[np.pad(a, (0, max_len - len(a)), 'constant', constant_values=0) for a in item] for item in zp_data])
-zp_data = zp_data.reshape(zp_data.shape[0],-1)
+[zp_data,labels] = dataset_handling(data)
 
-##Load labels and convert to integer
-labels = data.loc[ :,[u'target']].values
-labels = labels.flatten()
-labels_name = np.array([6, 15, 16, 42, 52, 53, 62, 64, 65, 67, 88, 90, 92, 95, 99])
-[np.place(labels, labels == labels_name[i],[i]) for i in range(len(labels_name))]
-
-##Dividing into train and validation
-x_train = zp_data[:len(zp_data)-100]
-y_train = labels[:len(zp_data)-100]
-x_test = zp_data[len(zp_data)-100:len(zp_data)]
-y_test = labels[len(zp_data)-100:len(zp_data)]
+x_train = zp_data
+y_train = labels
 
 ##Convert labels to categorical one-hot encoding
 y_train = keras.utils.to_categorical(y_train, num_classes=15)
-y_test = keras.utils.to_categorical(y_test, num_classes=15)
 
 """Network Architecture"""
 
@@ -63,20 +79,23 @@ model = keras.Sequential([
     keras.layers.Dense(960, input_shape=(len(zp_data[0]),), activation=tf.nn.relu),
     keras.layers.BatchNormalization(),
     keras.layers.Dropout(0.5),
-    keras.layers.Dense(480, activation=tf.nn.relu),
-    keras.layers.BatchNormalization(),
-    keras.layers.Dropout(0.5),
+    #keras.layers.Dense(480, activation=tf.nn.relu),
+    #keras.layers.BatchNormalization(),
+    #keras.layers.Dropout(0.5),
     keras.layers.Dense(240, activation=tf.nn.relu),
     keras.layers.BatchNormalization(),
     keras.layers.Dropout(0.5),
-    keras.layers.Dense(120, activation=tf.nn.relu),
-    keras.layers.BatchNormalization(),
-    keras.layers.Dropout(0.5),
+    #keras.layers.Dense(120, activation=tf.nn.relu),
+    #keras.layers.BatchNormalization(),
+    #keras.layers.Dropout(0.5),
     keras.layers.Dense(60, activation=tf.nn.relu),
     keras.layers.BatchNormalization(),
     keras.layers.Dense(15, activation=tf.nn.softmax)
 ])
 
+del model  # deletes the existing model
+
+model = load_model('ANN_3layers_model.h5')
 
 """Network Training"""
 
@@ -86,17 +105,23 @@ model.compile(optimizer=rmsprop,
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 
-history = model.fit(x_train, y_train, epochs=100, validation_split=0.1, batch_size=32, verbose=1)
+tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=0,
+          write_graph=True, write_images=True)
+#tensorboard("logs/run_a")
+history = model.fit(x_train, y_train, epochs=10, validation_split=0.1, batch_size=32, verbose=1,callbacks = [tbCallBack])
 
-score = model.evaluate(x_test, y_test, batch_size=100)
+model.save('ANN_3layers_model.h5')
+
+#score = model.evaluate(x_test, y_test, batch_size=100)
 
 """Network Evaluation"""
 
 plot_model(model, to_file='model.png')
 
-print(score)
+#print(score)
 
 # Plot training & validation accuracy values
+plt.figure(1)
 plt.plot(history.history['acc'])
 plt.plot(history.history['val_acc'])
 plt.title('Model accuracy')
@@ -104,6 +129,8 @@ plt.ylabel('Accuracy')
 plt.xlabel('Epoch')
 plt.legend(['Train', 'Test'], loc='upper left')
 
+
+plt.figure(2)
 # Plot training & validation loss values
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
