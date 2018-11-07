@@ -166,7 +166,7 @@ print x_train[0:1,:]
 
 for layer in autoencoder.layers:
     layer.trainable = False
-last1=Dense(60, activation='relu')(decoded_vector)
+last1=Dense(60, activation='relu')(encoded)
 last2=BatchNormalization()(last1)
 last3=Dense(15, activation='softmax')(last2)
 
