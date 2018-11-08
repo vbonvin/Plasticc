@@ -6,7 +6,7 @@ from tensorflow import keras
 import numpy as np
 import matplotlib.pyplot as plt
 from keras.utils import plot_model
-from DataProcessing import *
+from DataProcessing import dataset_handling
 from util import *
 from tensorflow.keras.models import load_model
 from keras.callbacks import TensorBoard
@@ -33,7 +33,6 @@ data = data.append(bootstrap_sample(init_data), ignore_index=True)
 data = data.append(bootstrap_sample(init_data), ignore_index=True)
 data = data.append(bootstrap_sample(init_data), ignore_index=True)
 data = data.append(bootstrap_sample(init_data), ignore_index=True)
-"""""
 data = data.append(bootstrap_sample(init_data), ignore_index=True)
 data = data.append(bootstrap_sample(init_data), ignore_index=True)
 data = data.append(bootstrap_sample(init_data), ignore_index=True)
@@ -55,7 +54,7 @@ data = data.append(bootstrap_sample(init_data), ignore_index=True)
 data = data.append(bootstrap_sample(init_data), ignore_index=True)
 data = data.append(bootstrap_sample(init_data), ignore_index=True)
 data = data.append(bootstrap_sample(init_data), ignore_index=True)
-"""""
+
 #data = data.append(epurate_sample(data), ignore_index=True)
 
 print(data.loc[:].values.shape)
@@ -72,14 +71,12 @@ print(data.loc[:].values.shape)
 # -> Recursive neural network
 
 #Zeropadded ANN
-[zp_data,labels] = dataset_handling_with_standardisation(data)
-[x_test,y_test] = dataset_handling_with_standardisation(test)
-#[zp_data,labels] = dataset_handling(data)
-#[x_test,y_test] = dataset_handling(test)
+[zp_data,labels] = dataset_handling(data)
+[x_test,y_test] = dataset_handling(test)
 #Playing around with normalisation -> works great http://scikit-learn.org/stable/auto_examples/preprocessing/plot_all_scaling.html#sphx-glr-auto-examples-preprocessing-plot-all-scaling-py
-#scaler = QuantileTransformer(output_distribution='uniform').fit(zp_data)
-#zp_data = scaler.transform(zp_data)
-#x_test = scaler.transform(x_test)
+scaler = QuantileTransformer(output_distribution='uniform').fit(zp_data)
+zp_data = scaler.transform(zp_data)
+x_test = scaler.transform(x_test)
 #zp_data = MinMaxScaler().fit_transform(zp_data)
 #zp_data = QuantileTransformer(output_distribution='normal').fit_transform(zp_data)
 x_train = zp_data
@@ -123,7 +120,7 @@ model.compile(optimizer=rmsprop,
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 
-tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/run_bootstrap_10_StandAllFeat1SamplewithGalInfo', histogram_freq=0,
+tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/run_bootstrap_30_withgoodtest', histogram_freq=0,
           write_graph=True, write_images=True)
 #tensorboard("logs/run_a")
 history = model.fit(x_train, y_train, epochs=50, validation_split=0.1, batch_size=32, verbose=1,callbacks = [tbCallBack])
