@@ -31,8 +31,10 @@ from sklearn.preprocessing import QuantileTransformer
 
 
 def dataset_handling(data):
-    global zp_data, labels
-    """Dateset Handling"""
+    """
+    Returns standardised, zeropadded and flattened dataset and labels. Essently converts panda data into numpy data and formats for keras.
+    This is done with standardisation.
+    """
     # Flatten Data into 1D Vector
     ##Maximum number of points = 72 , keep around 80 values for even number
     ####max_len = np.max([len(a) for a in arr])
@@ -64,7 +66,11 @@ def dataset_handling(data):
     return[zp_data,labels]
 
 def dataset_handling_with_standardisation(init_data):
-    # Standardise, zeropad to uniform length and flatten Data into 1D Vector,
+    """
+    Returns standardised, zeropadded and flattened dataset and labels. Essently converts panda data into numpy data and formats for keras.
+    This is done with standardisation.
+    """
+    #
     ##Maximum number of points = 72 , keep around 80 values for even number
     max_len = 80
     ##Fluxes, Standardisation is done over 1 type of feature

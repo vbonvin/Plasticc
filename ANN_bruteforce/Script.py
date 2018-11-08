@@ -10,6 +10,7 @@ from DataProcessing import *
 from util import *
 from tensorflow.keras.models import load_model
 from keras.callbacks import TensorBoard
+import h5py
 
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import minmax_scale
@@ -21,40 +22,21 @@ from sklearn.preprocessing import QuantileTransformer
 from sklearn.preprocessing import PowerTransformer
 
 init_data = util.readpickle('training_samples.pkl')
-data = init_data.loc[1000:].copy(deep=True)
+data_start = init_data.loc[1000:].copy(deep=True)
 test = init_data.loc[:1000].copy(deep=True)
 
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data_start.append(bootstrap_sample(data_start), ignore_index=True)
+data = data.append(bootstrap_sample(data_start), ignore_index=True)
+data = data.append(bootstrap_sample(data_start), ignore_index=True)
+data = data.append(bootstrap_sample(data_start), ignore_index=True)
+#Shuffling (Important)
+data = data.sample(frac=1)
 """""
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
-data = data.append(bootstrap_sample(init_data), ignore_index=True)
+data = data.append(bootstrap_sample(data_start), ignore_index=True)
+data = data.append(bootstrap_sample(data_start), ignore_index=True)
+data = data.append(bootstrap_sample(data_start), ignore_index=True)
+data = data.append(bootstrap_sample(data_start), ignore_index=True)
+data = data.append(bootstrap_sample(data_start), ignore_index=True)
 """""
 #data = data.append(epurate_sample(data), ignore_index=True)
 
@@ -74,20 +56,43 @@ print(data.loc[:].values.shape)
 #Zeropadded ANN
 [zp_data,labels] = dataset_handling_with_standardisation(data)
 [x_test,y_test] = dataset_handling_with_standardisation(test)
-#[zp_data,labels] = dataset_handling(data)
-#[x_test,y_test] = dataset_handling(test)
+##zp_data = np.load('x_train.npy')
+##x_test = np.load('x_test.npy')
+
+print("Finished loading")
+###[zp_data,labels] = dataset_handling(data)
+###[[x_test,y_test] = dataset_handling(test)
 #Playing around with normalisation -> works great http://scikit-learn.org/stable/auto_examples/preprocessing/plot_all_scaling.html#sphx-glr-auto-examples-preprocessing-plot-all-scaling-py
-#scaler = QuantileTransformer(output_distribution='uniform').fit(zp_data)
-#zp_data = scaler.transform(zp_data)
-#x_test = scaler.transform(x_test)
-#zp_data = MinMaxScaler().fit_transform(zp_data)
-#zp_data = QuantileTransformer(output_distribution='normal').fit_transform(zp_data)
+scaler = QuantileTransformer(output_distribution='uniform').fit(zp_data)
+print(scaler.get_params())
+zp_data = scaler.transform(zp_data)
+x_test = scaler.transform(x_test)
+###zp_data = QuantileTransformer(output_distribution='normal').fit_transform(zp_data)
 x_train = zp_data
 y_train = labels
 
 ##Convert labels to categorical one-hot encoding
 y_train = keras.utils.to_categorical(y_train, num_classes=15)
 y_test = keras.utils.to_categorical(y_test, num_classes=15)
+
+#y_train = np.load('y_train.npy')
+#y_test = np.load('y_test.npy')
+
+hf = h5py.File('data.h5', 'w')
+hf.create_dataset('x_train', data=x_train)
+hf.create_dataset('y_train', data=y_train)
+hf.create_dataset('x_test', data=x_test)
+hf.create_dataset('y_test', data=y_test)
+
+hf.close()
+
+###np.save('x_train.npy', x_train)
+###np.save('y_train.npy', y_train)
+###np.save('x_test.npy', x_test)
+###np.save('y_test.npy', y_test)
+
+
+
 
 """Network Architecture"""
 
@@ -123,10 +128,10 @@ model.compile(optimizer=rmsprop,
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 
-tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/run_bootstrap_10_StandAllFeat1SamplewithGalInfo', histogram_freq=0,
+tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/run_bootstrap_5_StandAllFeatAllSample', histogram_freq=0,
           write_graph=True, write_images=True)
 #tensorboard("logs/run_a")
-history = model.fit(x_train, y_train, epochs=50, validation_split=0.1, batch_size=32, verbose=1,callbacks = [tbCallBack])
+history = model.fit(x_train, y_train, epochs=50, validation_split=0.2, batch_size=32, verbose=1,callbacks = [tbCallBack])
 
 #model.save('ANN_3layers_model_normalised.h5')
 
@@ -136,8 +141,6 @@ print("Score: ", score)
 """Network Evaluation"""
 
 plot_model(model, to_file='model.png')
-
-#print(score)
 
 # Plot training & validation accuracy values
 plt.figure(1)
