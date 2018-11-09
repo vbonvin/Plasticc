@@ -1,38 +1,23 @@
-import util
-import pandas as pd
-# TensorFlow and tf.keras
-import tensorflow as tf
-from tensorflow import keras
-import numpy as np
-import matplotlib.pyplot as plt
-from keras.utils import plot_model
 from util import *
 from sklearn.preprocessing import QuantileTransformer
 
-#init_data = util.readpickle('training_samples.pkl')
 
-#data = init_data.copy(deep=True)
-#print(data)
-#data = data.append(bootstrap_sample(init_data), ignore_index=True)
-#print(data.loc[7850])
-#data = data.append(bootstrap_sample(init_data))
-#data = data.append(bootstrap_sample(init_data))
-#data = data.append(bootstrap_sample(init_data))
-#data = data.append(bootstrap_sample(init_data))
-#data = data.append(bootstrap_sample(init_data))
-#data = data.append(bootstrap_sample(init_data))
-#data = data.append(bootstrap_sample(init_data))
-#data = data.append(epurate_sample(data), ignore_index=True)
-
-#print(data)
-#data = epurate_sample(data)
-#print(data)
-#print(data.loc[:].values.shape)
-
-
-def dataset_handling(data):
+def dataset_augmentation(data_start, bootstrapping = 1, shuffle = True):
     """
-    Returns standardised, zeropadded and flattened dataset and labels. Essently converts panda data into numpy data and formats for keras.
+    Returns augmented dataset using bootstrap and epurate fonctions from utils
+    """
+    data = data_start
+    for ii in range(bootstrapping):
+        data = data.append(bootstrap_sample(data_start), ignore_index=True)
+
+    # Shuffling (Important)
+    if shuffle == True:
+        data = data.sample(frac=1)
+    return data
+
+def dataset_zeropadding(data):
+    """
+    Returns zeropadded and flattened dataset and labels. Essently converts panda data into numpy data and formats for keras.
     This is done with standardisation.
     """
     # Flatten Data into 1D Vector

@@ -6,12 +6,14 @@ from tensorflow import keras
 import numpy as np
 import matplotlib.pyplot as plt
 from keras.utils import plot_model
+import itertools
 from DataProcessing import *
 from util import *
 from tensorflow.keras.models import load_model
 from keras.callbacks import TensorBoard
 import h5py
 from sklearn.metrics import confusion_matrix
+from sklearn.externals import joblib
 
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
@@ -74,22 +76,34 @@ def predict_lightcurves(model,x_test,y_test):
     plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,title='Normalized confusion matrix')
 
     plt.show()
-    return y_pred.argmax(axis=1)
+    return y_pred
 
-#Loading ANN model
-model = load_model('../ANN_3layers_model_normalised.h5')
-#model.compile(optimizer=rmsprop,loss='categorical_crossentropy', metrics=['accuracy'])
+if __name__ == "__main__":
+    #Loading ANN model
+    model = load_model('../ANN_3layers_model_standardised.h5')
+    #model.compile(optimizer=rmsprop,loss='categorical_crossentropy', metrics=['accuracy'])
 
-#Loading and preparing Test data
-init_data = util.readpickle('../training_samples.pkl')
-#data = init_data.loc[1000:].copy(deep=True)
-test_data = init_data.loc[:1000].copy(deep=True)
-[x_test,y_test] = dataset_handling(test_data)
-y_test = keras.utils.to_categorical(y_test, num_classes=15)
+    #Loading and preparing Test data
+    init_data = util.readpickle('../training_samples.pkl')
+    #data = init_data.loc[1000:].copy(deep=True)
+    test_data = init_data.loc[:1000].copy(deep=True)
+    [x_test,y_test] = dataset_zeropadding(test_data)
 
-#scaler = QuantileTransformer(output_distribution='uniform').fit(zp_data)
-#scaler.set_params()
+    scaler = joblib.load('../QuantileTransformer.pkl')
+    #scaler = QuantileTransformer(QuantileTransformer(copy=True, ignore_implicit_zeros=False, n_quantiles=1000,
+    #          output_distribution='uniform', random_state=None,
+    #         subsample=100000))
+    x_test = scaler.transform(x_test)
+    #y_test = scaler.transform(y_test)
+    #scaler.set_params()
 
-y_test = predict_lightcurves(model,x_test,y_test)
-print(y_test)
+
+    y_test = keras.utils.to_categorical(y_test, num_classes=15)
+
+    score = model.evaluate(x_test, y_test, batch_size=100)
+    print("Score: ", score)
+
+
+    y_test = predict_lightcurves(model,x_test,y_test)
+    print(y_test)
 
