@@ -1,0 +1,21 @@
+By Christoph
+
+Step 1: Question of Standardisation/Normalisation:
+    - Which algo to use - Quantile Transformer isn't bad
+    - Over same type of features and 1 sample
+        - Did without standardising the coordinates and the redshifits
+        - try again without coordinates
+    - Over same type of feature and all sample? -> storing of mean and std neccesary
+    - Over 1 features and all samples? -> with boot straping helps a lot. No overfitting, accuracy of 0.75
+    -> final decision: Standardisation QantileTransformer 1 feature all samples
+        -> removing StandXFeatXSample keyword
+
+Step 2: Benchmark ANN creation
+    - limited by gamer GPUs so needs to be fast
+    - how much bootstrapping
+    - how much epuration
+    - how many layers
+    - how features
+
+
+Step 2: Confu Matrix and Roc curves
