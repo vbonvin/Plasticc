@@ -94,20 +94,24 @@ def epurate_sample(sample, ep_percent=10):
 
 	newsample = sample.copy(deep=True)
 
-	# loop over the 6 filters
-	for band_index in range(6):
-		nobs = len(newsample["mjds_%i" % band_index])
+	tryagain = True
+	while tryagain:
+		# loop over the 6 filters
+		tryagain = False
+		for band_index in range(6):
+			nobs = len(newsample["mjds_%i" % band_index])
 
-		# make sure we have at least 5 points we don't shoot
-		nshoot = min(max(0, nobs-5), int(round(nobs / 100. * ep_percent)))
-		inds = np.arange(nobs)
-		random.shuffle(inds)
-		inds_toshoot = inds[:nshoot]
+			# make sure we have at least 5 points we don't shoot
+			nshoot = min(max(0, nobs-5), int(round(nobs / 100. * ep_percent)))
+			inds = np.arange(nobs)
+			random.shuffle(inds)
+			inds_toshoot = inds[:nshoot]
 
-		tokeep = [False if i in inds_toshoot else True for i in np.arange(nobs)]
+			tokeep = [False if i in inds_toshoot else True for i in np.arange(nobs)]
 
-		newsample["mjds_%i" % band_index] = newsample["mjds_%i" % band_index][tokeep]
-		newsample["fluxes_%i" % band_index] = newsample["fluxes_%i" % band_index][tokeep]
-		newsample["fluxerrs_%i" % band_index] = newsample["fluxerrs_%i" % band_index][tokeep]
+			newsample["mjds_%i" % band_index] = newsample["mjds_%i" % band_index][tokeep]
+			newsample["fluxes_%i" % band_index] = newsample["fluxes_%i" % band_index][tokeep]
+			newsample["fluxerrs_%i" % band_index] = newsample["fluxerrs_%i" % band_index][tokeep]
+
 
 	return newsample
