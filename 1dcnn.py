@@ -151,12 +151,15 @@ model_m.compile(loss='categorical_crossentropy',optimizer='adam', metrics=['accu
 #plot_model(autoencoder, to_file='model.png')
 
 #print(score)
-score = model_m.evaluate(x_test, y_test, batch_size=10)
-print("Score: ", score)
+
 
 
 history = model_m.fit(x_train,y_train,batch_size=32, epochs=20,validation_split=0.2,verbose=1)
 # Plot training & validation accuracy values
+
+
+score = model_m.evaluate(x_test, y_test, batch_size=10)
+print("Score: ", score)
 '''
 plt.figure(1)
 plt.plot(history.history['acc'])
