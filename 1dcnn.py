@@ -179,43 +179,6 @@ plt.show()
 
 '''
 
-plt.figure()
-plt.plot(history2.history['acc'])
-plt.plot(history2.history['val_acc'])
-plt.title('Classifier accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Test'], loc='upper left')
-plt.show()
-
-plt.figure(2)
-# Plot training & validation loss values
-plt.plot(history2.history['loss'])
-plt.plot(history2.history['val_loss'])
-plt.title('Classifier loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Test'], loc='upper left')
-plt.show()
-
-plt.figure()
-plt.plot(history3.history['acc'])
-plt.plot(history3.history['val_acc'])
-plt.title('Classifier total accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Test'], loc='upper left')
-plt.show()
-
-plt.figure()
-# Plot training & validation loss values
-plt.plot(history3.history['loss'])
-plt.plot(history3.history['val_loss'])
-plt.title('Classifier total loss')
-plt.ylabel('Loss')
-plt.xlabel('Epoch')
-plt.legend(['Train', 'Test'], loc='upper left')
-plt.show()
 
 # Train the model, iterating on the data in batches of 32 samples
 #for i in range(10):
