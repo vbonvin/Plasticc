@@ -22,7 +22,7 @@ if __name__ == "__main__":
     test = init_data.loc[:1000].copy(deep=True)
 
     #Dataset augmentation
-    data = dataset_augmentation(data_start, bootstrapping = 10)
+    data = dataset_augmentation(data_start, bootstrapping = 5)
     #data = data.append(epurate_sample(data), ignore_index=True)
     print(data.loc[:].values.shape)
 
@@ -78,19 +78,19 @@ if __name__ == "__main__":
     #Zeropadded ANN
 
     model = keras.Sequential([
-        keras.layers.Dense(960, input_shape=(len(zp_data[0]),), activation=tf.nn.relu),
+        keras.layers.Dense(960*2, input_shape=(len(zp_data[0]),), activation=tf.nn.elu),
         keras.layers.BatchNormalization(),
         keras.layers.Dropout(0.5),
-        keras.layers.Dense(480, activation=tf.nn.relu),
+        #keras.layers.Dense(480, activation=tf.nn.relu),
+        #keras.layers.BatchNormalization(),
+        #keras.layers.Dropout(0.5),
+        keras.layers.Dense(240*2, activation=tf.nn.elu),
         keras.layers.BatchNormalization(),
         keras.layers.Dropout(0.5),
-        keras.layers.Dense(240, activation=tf.nn.relu),
-        keras.layers.BatchNormalization(),
-        keras.layers.Dropout(0.5),
-        keras.layers.Dense(120, activation=tf.nn.relu),
-        keras.layers.BatchNormalization(),
-        keras.layers.Dropout(0.5),
-        keras.layers.Dense(60, activation=tf.nn.relu),
+        #keras.layers.Dense(120, activation=tf.nn.relu),
+        #keras.layers.BatchNormalization(),
+        #keras.layers.Dropout(0.5),
+        keras.layers.Dense(60*2, activation=tf.nn.elu),
         keras.layers.BatchNormalization(),
         keras.layers.Dense(15, activation=tf.nn.softmax)
     ])
@@ -107,7 +107,7 @@ if __name__ == "__main__":
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
 
-    tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/run_bootstrap_10_ANN5layers', histogram_freq=0,
+    tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/run_bootstrap_5_ANN3layers_elu_noaddinfo', histogram_freq=0,
               write_graph=True, write_images=True)
 
     history = model.fit(x_train, y_train, epochs=50, validation_split=0.2, batch_size=32, verbose=1,callbacks = [tbCallBack])

@@ -3,19 +3,36 @@ By Christoph
 Step 1: Question of Standardisation/Normalisation:
     - Which algo to use - Quantile Transformer isn't bad
     - Over same type of features and 1 sample
-        - Did without standardising the coordinates and the redshifits
+        - Did without standardising the coordinates and the redshifits Acc:0.55
         - try again without coordinates
-    - Over same type of feature and all sample? -> storing of mean and std neccesary
-    - Over 1 features and all samples? -> with boot straping helps a lot. No overfitting, accuracy of 0.75
+    - Over same type of feature and all sample? -> storing of mean and std neccesary Acc:0.60
+    - Over 1 features and all samples? -> with boot straping helps a lot. No overfitting, accuracy of Acc: 0.65
     -> final decision: Standardisation QantileTransformer 1 feature all samples
         -> removing StandXFeatXSample keyword
 
 Step 2: Benchmark ANN creation
     - limited by gamer GPUs so needs to be fast
+    - how much bootstrapping    -> 10
+    - how much epuration        ->
+    - how many layers           -> 3 layers
+        -> 3 better then 5 weird but also same testscore Acc:  0.64     TOBETESTEDLATER
+    - how features
+        -> twice better training and validation accu -> but same test Acc: 0.65 TOBETESTEDLATER
+
+    -> typical accuracy : 0.65
+    - Activation function
+        - relu (std) Acc: 0.65 weird how valdation and test score are better then training set acc
+        - elu        Acc: 0.65 Overfits, same acc with more bootstrapping, with only boots straping 5 does really well
+
+Step 3: Confu Matrix and Roc curves
+    - artificial enhancement of imbalanced classes
+    - roc curve, change threshold
+
+
+Step 4: Final ANN, Pipeline?
     - how much bootstrapping
     - how much epuration
     - how many layers
-    - how features
-
-
-Step 2: Confu Matrix and Roc curves
+    - how many features
+    - how long the training
+    - learning rate
