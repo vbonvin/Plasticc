@@ -107,7 +107,7 @@ if __name__ == "__main__":
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
 
-    tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/run_bootstrap_5_ANN3layers_elu', histogram_freq=0,
+    tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/run_bootstrap_5_ANN3layers_elu_noaddinfo', histogram_freq=0,
               write_graph=True, write_images=True)
 
     history = model.fit(x_train, y_train, epochs=50, validation_split=0.2, batch_size=32, verbose=1,callbacks = [tbCallBack])
