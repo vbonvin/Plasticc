@@ -4,7 +4,10 @@ A bunch of useful functions
 
 
 import os, sys
-import cPickle as pickle
+try:  # py2.7, for PyCS (sorry(
+	import cPickle as pickle
+except:	 # py3.6, for reasonable people
+	import _pickle as pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -25,7 +28,7 @@ def writepickle(obj, filepath, verbose=True, protocol=-1):
 	if verbose: print("Wrote %s" % filepath)
 
 
-def readpickle(filepath, verbose=True):
+def readpickle(filepath, verbose=True, py3=False):
 	"""
 	I read a pickle file and return whatever object it contains.
 	If the filepath ends with .gz, I'll unzip the pickle file.
@@ -34,7 +37,10 @@ def readpickle(filepath, verbose=True):
 		pkl_file = gzip.open(filepath,'rb')
 	else:
 		pkl_file = open(filepath, 'rb')
-	obj = pickle.load(pkl_file)
+	if py3:
+		obj = pickle.load(pkl_file, encoding='latin1')
+	else:
+		obj = pickle.load(pkl_file)
 	pkl_file.close()
 	if verbose: print("Read %s" % filepath)
 	return obj
