@@ -43,8 +43,8 @@ def dataset_zeropadding(data):
     zp_data = np.asarray(
         [[np.pad(a, (0, max_len - len(a)), 'constant', constant_values=0) for a in item] for item in zp_data])
     zp_data = zp_data.reshape(zp_data.shape[0], -1)
-    zp_data = np.c_[
-        zp_data, data.loc[:, [u'gal_b', u'gal_l', u'hostgal_photoz', u'hostgal_photoz_err', u'hostgal_specz']].values]
+    #zp_data = np.c_[
+    #    zp_data, data.loc[:, [u'gal_b', u'gal_l', u'hostgal_photoz', u'hostgal_photoz_err', u'hostgal_specz']].values]
     ##Normalise data to be determined
     ##Load labels and convert to integer
     labels = data.loc[:, [u'target']].values
