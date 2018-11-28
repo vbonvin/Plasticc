@@ -97,9 +97,10 @@ def epurate_sample(sample, ep_percent=10):
 	# loop over the 6 filters
 	for band_index in range(6):
 		nobs = len(newsample["mjds_%i" % band_index])
-
+		#print("nobs",nobs)
 		# make sure we have at least 5 points we don't shoot
 		nshoot = min(max(0, nobs-5), int(round(nobs / 100. * ep_percent)))
+		#print("nshoot",nshoot)
 		inds = np.arange(nobs)
 		random.shuffle(inds)
 		inds_toshoot = inds[:nshoot]

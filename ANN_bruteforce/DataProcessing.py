@@ -2,13 +2,20 @@ from util import *
 from sklearn.preprocessing import QuantileTransformer
 
 
-def dataset_augmentation(data_start, bootstrapping = 1, shuffle = True):
+def dataset_augmentation(data_start, bootstrapping = 1, epurate = 1, shuffle = True):
     """
     Returns augmented dataset using bootstrap and epurate fonctions from utils
     """
     data = data_start
     for ii in range(bootstrapping):
-        data = data.append(bootstrap_sample(data_start), ignore_index=True)
+        data = data.append(data_start.apply(bootstrap_sample, axis=1), ignore_index=True)
+
+#Bugged version that weirdly works well....
+#    for ii in range(bootstrapping):
+ #       data = data.append(bootstrap_sample(data_start), ignore_index=True)
+
+    for ii in range(epurate):
+        data = data.append(data_start.apply(epurate_sample, axis=1), ignore_index=True)
 
     # Shuffling (Important)
     if shuffle == True:
@@ -18,7 +25,7 @@ def dataset_augmentation(data_start, bootstrapping = 1, shuffle = True):
 def dataset_zeropadding(data):
     """
     Returns zeropadded and flattened dataset and labels. Essently converts panda data into numpy data and formats for keras.
-    This is done with standardisation.
+    This is done without standardisation.
     """
     # Flatten Data into 1D Vector
     ##Maximum number of points = 72 , keep around 80 values for even number
@@ -47,6 +54,32 @@ def dataset_zeropadding(data):
     labels_name = np.array([6, 15, 16, 42, 52, 53, 62, 64, 65, 67, 88, 90, 92, 95, 99])
     [np.place(labels, labels == labels_name[i], [i]) for i in range(len(labels_name))]
     #print(zp_data.shape)
+
+    return[zp_data,labels]
+
+def dataset_zeropadding_3D(data):
+    """
+    Returns zeropadded and non-flattened dataset and labels. Essently converts panda data into numpy data and formats for keras.
+    This is done without standardisation. Most for Recurent NN
+    """
+    max_var_len = 80
+
+    zp_data = data.loc[:, [u'fluxerrs_0',
+                           u'fluxerrs_1', u'fluxerrs_2', u'fluxerrs_3', u'fluxerrs_4', u'fluxerrs_5', u'fluxes_0',
+                           u'fluxes_1',
+                           u'fluxes_2', u'fluxes_3', u'fluxes_4', u'fluxes_5', u'mjds_0', u'mjds_1', u'mjds_2',
+                           u'mjds_3', u'mjds_4', u'mjds_5']].values
+    ## Zero-padding using Numpy and reshape in 1d vector [:,data]
+    zp_data = np.asarray(
+        [[np.pad(a, (0, max_var_len - len(a)), 'constant', constant_values=0) for a in item] for item in zp_data])
+    ## Swapping axes so as to get (None,  Number of variables, Number of flux sample,) for LSTM
+    zp_data = np.swapaxes(zp_data, 1, 2)
+
+    ##Load labels and convert to integer
+    labels = data.loc[:, [u'target']].values
+    labels = labels.flatten()
+    labels_name = np.array([6, 15, 16, 42, 52, 53, 62, 64, 65, 67, 88, 90, 92, 95, 99])
+    [np.place(labels, labels == labels_name[i], [i]) for i in range(len(labels_name))]
 
     return[zp_data,labels]
 
