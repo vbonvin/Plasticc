@@ -1,4 +1,4 @@
-import util
+import util, sys
 import pandas as pd
 # TensorFlow and tf.keras
 import tensorflow as tf
@@ -17,15 +17,17 @@ from sklearn.preprocessing import QuantileTransformer
 
 if __name__ == "__main__":
     #Load Data
-    init_data = util.readpickle('training_samples.pkl')
+    init_data = util.readpickle('training_samples_spl.pkl', py3=True)
     data_start = init_data.loc[1000:].copy(deep=True)
     test = init_data.loc[:1000].copy(deep=True)
 
     #Dataset augmentation
+
+    # We will use the spl parameters, so no augmentation for the moment (would require recomputing new fitparams after bootstraping, takes a long time...)
     data = dataset_augmentation(data_start, bootstrapping = 5)
+
     #data = data.append(epurate_sample(data), ignore_index=True)
     print(data.loc[:].values.shape)
-
     """Dateset Handling"""
     #Flatten Data into 1D Vector
     #Beginning just fluxes and time data

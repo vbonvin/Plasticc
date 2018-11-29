@@ -41,6 +41,8 @@ def dataset_zeropadding(data):
                            u'fluxes_2', u'fluxes_3', u'fluxes_4', u'fluxes_5', u'mjds_0', u'mjds_1', u'mjds_2',
                            u'mjds_3', u'mjds_4',
                            u'mjds_5']].values
+
+
     ##Zero-padding using Numpy and reshape in 1d vector [:,data]
     zp_data = np.asarray(
         [[np.pad(a, (0, max_len - len(a)), 'constant', constant_values=0) for a in item] for item in zp_data])
@@ -76,6 +78,41 @@ def dataset_zeropadding_3D(data):
     zp_data = np.swapaxes(zp_data, 1, 2)
 
     ##Load labels and convert to integer
+    labels = data.loc[:, [u'target']].values
+    labels = labels.flatten()
+    labels_name = np.array([6, 15, 16, 42, 52, 53, 62, 64, 65, 67, 88, 90, 92, 95, 99])
+    [np.place(labels, labels == labels_name[i], [i]) for i in range(len(labels_name))]
+
+    return[zp_data,labels]
+def dataset_spl_zeropadding(data):
+    """
+    Same as above, but using the spl fit params instead of the jds, fluxes and errs.
+    """
+
+    max_len = 70  # one knot every 20 days (1096 days max) + stab knots (10) --> definitely less than 70 knots in total
+
+    zp_data = data.loc[:, [u"spl_0_t", u"spl_0_c",
+                                u"spl_1_t", u"spl_1_c",
+                                u"spl_2_t", u"spl_2_c",
+                                u"spl_3_t", u"spl_3_c",
+                                u"spl_4_t", u"spl_4_c",
+                                u"spl_5_t", u"spl_5_c"
+                                ]
+                            ].values
+
+    # Zero-padding using Numpy and reshape in 1d vector [:,data]
+    zp_data = np.asarray([
+        [np.pad(a, (0, max_len - len(a)), 'constant', constant_values=0)
+          for a in item]
+            for item in zp_data])
+
+
+    zp_data = zp_data.reshape(zp_data.shape[0], -1)
+    zp_data = np.c_[zp_data, data.loc[:, [u'gal_b', u'gal_l', u'hostgal_photoz', u'hostgal_photoz_err', u'hostgal_specz']].values]
+
+
+    # Normalise data to be determined
+    # Load labels and convert to integer
     labels = data.loc[:, [u'target']].values
     labels = labels.flatten()
     labels_name = np.array([6, 15, 16, 42, 52, 53, 62, 64, 65, 67, 88, 90, 92, 95, 99])
@@ -133,7 +170,7 @@ def dataset_handling_with_standardisation(init_data):
 
     ##Adding redshift info// Gal pos info might be necessary to remove
     zp_data = np.c_[
-        zp_data, init_data.loc[:, [u'gal_b', u'gal_l', u'hostgal_photoz', u'hostgal_photoz_err', u'hostgal_specz']].values]
+        zp_data, init_data.loc[:, [u'gal_b', u'gal_l', u'hostgal_photoz', u'hostgal_photoz_err', u'hostgal_specz', u'mwebv']].values]
     print(zp_data.shape)
 
     ##Load labels and convert to integer

@@ -4,7 +4,10 @@ A bunch of useful functions
 
 
 import os, sys
-import cPickle as pickle
+try:  # py2.7, for PyCS (sorry(
+	import cPickle as pickle
+except:	 # py3.6, for reasonable people
+	import _pickle as pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -22,10 +25,10 @@ def writepickle(obj, filepath, verbose=True, protocol=-1):
 
 	pickle.dump(obj, pkl_file, protocol)
 	pkl_file.close()
-	if verbose: print "Wrote %s" % filepath
+	if verbose: print("Wrote %s" % filepath)
 
 
-def readpickle(filepath, verbose=True):
+def readpickle(filepath, verbose=True, py3=False):
 	"""
 	I read a pickle file and return whatever object it contains.
 	If the filepath ends with .gz, I'll unzip the pickle file.
@@ -34,9 +37,12 @@ def readpickle(filepath, verbose=True):
 		pkl_file = gzip.open(filepath,'rb')
 	else:
 		pkl_file = open(filepath, 'rb')
-	obj = pickle.load(pkl_file)
+	if py3:
+		obj = pickle.load(pkl_file, encoding='latin1')
+	else:
+		obj = pickle.load(pkl_file)
 	pkl_file.close()
-	if verbose: print "Read %s" % filepath
+	if verbose: print("Read %s" % filepath)
 	return obj
 
 
@@ -94,21 +100,24 @@ def epurate_sample(sample, ep_percent=10):
 
 	newsample = sample.copy(deep=True)
 
-	# loop over the 6 filters
-	for band_index in range(6):
-		nobs = len(newsample["mjds_%i" % band_index])
-		#print("nobs",nobs)
-		# make sure we have at least 5 points we don't shoot
-		nshoot = min(max(0, nobs-5), int(round(nobs / 100. * ep_percent)))
-		#print("nshoot",nshoot)
-		inds = np.arange(nobs)
-		random.shuffle(inds)
-		inds_toshoot = inds[:nshoot]
+	tryagain = True
+	while tryagain:
+		# loop over the 6 filters
+		tryagain = False
+		for band_index in range(6):
+			nobs = len(newsample["mjds_%i" % band_index])
 
-		tokeep = [False if i in inds_toshoot else True for i in np.arange(nobs)]
+			# make sure we have at least 5 points we don't shoot
+			nshoot = min(max(0, nobs-5), int(round(nobs / 100. * ep_percent)))
+			inds = np.arange(nobs)
+			random.shuffle(inds)
+			inds_toshoot = inds[:nshoot]
 
-		newsample["mjds_%i" % band_index] = newsample["mjds_%i" % band_index][tokeep]
-		newsample["fluxes_%i" % band_index] = newsample["fluxes_%i" % band_index][tokeep]
-		newsample["fluxerrs_%i" % band_index] = newsample["fluxerrs_%i" % band_index][tokeep]
+			tokeep = [False if i in inds_toshoot else True for i in np.arange(nobs)]
+
+			newsample["mjds_%i" % band_index] = newsample["mjds_%i" % band_index][tokeep]
+			newsample["fluxes_%i" % band_index] = newsample["fluxes_%i" % band_index][tokeep]
+			newsample["fluxerrs_%i" % band_index] = newsample["fluxerrs_%i" % band_index][tokeep]
+
 
 	return newsample
