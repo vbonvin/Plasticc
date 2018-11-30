@@ -13,12 +13,26 @@ from sklearn.preprocessing import QuantileTransformer
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
+from keras.layers import GRU
+from keras.layers import RNN
 from keras.layers import Dropout
+import keras.backend as K
+from itertools import product
+from functools import partial
+
+def compute_weights(N_of_Classes, penalty_factor=20):
+    "Creating Weights: the critical and arbitrary factor is the penalty_factor"
+    w_array = np.ones((len(N_of_Classes)+1, len(N_of_Classes)+1))
+
+    for c_p, c_t in product(range(len(w_array)-1), range(len(w_array)-1)):
+        w_array[c_t, c_p] = 1 + N_of_Classes[c_p]/np.sum(N_of_Classes) * penalty_factor        #Penalising 1 False classified as 0 -> has to be higher than 1
+    return w_array
+
 
 "Taken from https://machinelearningmastery.com/sequence-classification-lstm-recurrent-neural-networks-python-keras/"
 
 # Recurrent Network
-model_name = "run_RecNN_Feat50_Dropout05_StandY_boot5_epu5_mjdsY_rmsprop_lr0.001_decay0.1"
+model_name = "run_RecNN_LSTM_ncce_penalty20_Feat20_Dropout05_StandY_boot1_epu1_rmsprop_lr0.001_decay0.1"
 
 """  Load Data """
 init_data = util.readpickle('../training_samples.pkl')
@@ -26,7 +40,7 @@ data_start = init_data.loc[1000:].copy(deep=True)
 test = init_data.loc[:1000].copy(deep=True)
 
 #Dataset augmentation
-data = dataset_augmentation(data_start, bootstrapping=5, epurate=5)
+data = dataset_augmentation(data_start, bootstrapping=1, epurate=1)
 
 
 """ Data Preparation """
@@ -44,8 +58,6 @@ for ii in range(zp_data.shape[1]):
     zp_data[:, ii, :] = scaler[ii].transform(zp_data[:, ii, :])
     x_test[:, ii, :] = scaler[ii].transform(x_test[:, ii, :])
 
-print("after standardisation",zp_data,zp_data.shape)
-
 x_train = zp_data
 y_train = labels
 
@@ -53,40 +65,66 @@ y_train = labels
 y_train = keras.utils.to_categorical(y_train, num_classes=15)
 y_test = keras.utils.to_categorical(y_test, num_classes=15)
 
+""" Loss function definition """
+##Personalised loss function , example taken from https://github.com/keras-team/keras/issues/2115
+##Test needed comparing categorical cross entropy to weigthed cat cross entropy (without weights)
+
+## Applies weight to categorical cross entropy
+def w_categorical_crossentropy(y_true, y_pred, weights):
+    "Categorical crossentropy loss function with weights, has to be initalised after with somethin like: "
+    "loss = lambda y_true, y_pred: w_categorical_crossentropy(y_true, y_pred, weights=w_array)"
+    nb_cl = len(weights)
+    final_mask = K.zeros_like(y_pred[:, 0])
+    y_pred_max = K.max(y_pred, axis=1)
+    y_pred_max = K.expand_dims(y_pred_max, 1)
+    y_pred_max_mat = K.equal(y_pred, y_pred_max)
+    for c_p, c_t in product(range(nb_cl), range(nb_cl)):
+        final_mask += (K.cast(weights[c_t, c_p],K.floatx()) * K.cast(y_pred_max_mat[:, c_p], K.floatx()) * K.cast(y_true[:, c_t],K.floatx()))
+    return K.categorical_crossentropy(y_true, y_pred) * final_mask
+
+## Creating Weights: the critical and arbitrary factor is the penalty_factor
+N_of_Classes = np.array([151., 495., 924., 1193., 183., 30., 484., 102., 981.,  208., 370.,  2313.,  239., 175.])
+penalty_factor = 20
+
+w_array = compute_weights(N_of_Classes, penalty_factor=20)
+
+loss = lambda y_true, y_pred: w_categorical_crossentropy(y_true, y_pred, weights=w_array)
 
 """ Model """
 
 model = Sequential()
-model.add(LSTM(50, input_shape=(80, zp_data.shape[2])))
+model.add(LSTM(20, input_shape=(80, zp_data.shape[2])))
 model.add(Dropout(0.5))
 #model.add(LSTM(20))
 #model.add(Dropout(0.5))
 model.add(Dense(15, activation='softmax'))
 rmsprop = keras.optimizers.RMSprop(lr=0.001, decay=0.01)
-model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+model.compile(loss=loss, optimizer='rmsprop', metrics=['accuracy'])
+#model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 print(model.summary())
 
 tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/' + model_name, histogram_freq=0,
                                          write_graph=True, write_images=True)
 
-history = model.fit(x_train, y_train, epochs=50, validation_split=0.2, batch_size=32, verbose=1,callbacks = [tbCallBack])
+history = model.fit(x_train, y_train, epochs=50, validation_data=(x_test, y_test), batch_size=32, verbose=1,callbacks = [tbCallBack])
 
 model.save(model_name)
 
-# Final evaluation of the model
-scores = model.evaluate(x_test, y_test, verbose=0)
-print("Accuracy: ", scores)
 
 """ Visualisation """
 
+score = model.evaluate(x_test, y_test, batch_size=10)
+print("Score: ", score)
+
+y_test = predict_lightcurves(model, x_test, y_test)
+print(y_test)
 
 
 
 """
 Next:
-Test GRU
-Test RecNN
-Test Standardisation
+Test Standardisation ('normal')
 Test +ANN
+Test Lower decay 0.005
 Test + z
 """
