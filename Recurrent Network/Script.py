@@ -19,6 +19,8 @@ from keras.layers import Dropout
 import keras.backend as K
 from itertools import product
 from functools import partial
+from tensorflow.keras.models import load_model
+from sklearn.externals import joblib
 
 def compute_weights(N_of_Classes, penalty_factor=20):
     "Creating Weights: the critical and arbitrary factor is the penalty_factor"
@@ -32,7 +34,7 @@ def compute_weights(N_of_Classes, penalty_factor=20):
 "Taken from https://machinelearningmastery.com/sequence-classification-lstm-recurrent-neural-networks-python-keras/"
 
 # Recurrent Network
-model_name = "run_RecNN_LSTM_ncce_penalty20_Feat20_Dropout05_StandY_boot1_epu1_rmsprop_lr0.001_decay0.1"
+model_name = "run_RecNN_LSTM_ncce_penalty20_Feat50_Dropout05_StandY_boot10_epu10_rmsprop_lr0.001_decay0.1"
 
 """  Load Data """
 init_data = util.readpickle('../training_samples.pkl')
@@ -40,7 +42,7 @@ data_start = init_data.loc[1000:].copy(deep=True)
 test = init_data.loc[:1000].copy(deep=True)
 
 #Dataset augmentation
-data = dataset_augmentation(data_start, bootstrapping=1, epurate=1)
+data = dataset_augmentation(data_start, bootstrapping=10, epurate=10)
 
 
 """ Data Preparation """
@@ -57,6 +59,8 @@ for ii in range(zp_data.shape[1]):
     scaler.append(QuantileTransformer(output_distribution='uniform').fit(zp_data[:,ii,:]))
     zp_data[:, ii, :] = scaler[ii].transform(zp_data[:, ii, :])
     x_test[:, ii, :] = scaler[ii].transform(x_test[:, ii, :])
+
+joblib.dump(scaler, model_name + '_scaler.pkl')
 
 x_train = zp_data
 y_train = labels
@@ -93,22 +97,36 @@ loss = lambda y_true, y_pred: w_categorical_crossentropy(y_true, y_pred, weights
 """ Model """
 
 model = Sequential()
-model.add(LSTM(20, input_shape=(80, zp_data.shape[2])))
+model.add(LSTM(50, input_shape=(80, zp_data.shape[2])))
 model.add(Dropout(0.5))
 #model.add(LSTM(20))
 #model.add(Dropout(0.5))
 model.add(Dense(15, activation='softmax'))
-rmsprop = keras.optimizers.RMSprop(lr=0.001, decay=0.01)
+rmsprop = keras.optimizers.RMSprop(lr=0.0001, decay=0.01)
 model.compile(loss=loss, optimizer='rmsprop', metrics=['accuracy'])
 #model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 print(model.summary())
 
 tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/' + model_name, histogram_freq=0,
                                          write_graph=True, write_images=True)
+#Continue Training
+model.load_weights(model_name + '_model_weights.h5')
 
-history = model.fit(x_train, y_train, epochs=50, validation_data=(x_test, y_test), batch_size=32, verbose=1,callbacks = [tbCallBack])
+modelcheckpointCallBack = keras.callbacks.ModelCheckpoint('weights{epoch:08d}.h5',
+                                     save_weights_only=True, period=10)
 
-model.save(model_name)
+history = model.fit(x_train, y_train, epochs=10, validation_data=(x_test, y_test), batch_size=32, verbose=1,callbacks = [tbCallBack,modelcheckpointCallBack])
+
+# serialize model to JSON
+model_json = model.to_json()
+with open(model_name + "_model.json", "w") as json_file:
+    json_file.write(model_json)
+
+model.save_weights(model_name + "_model_weights.h5")
+#model.load_weights(model_name + '_model_weights.h5')
+#del model  # deletes the existing model
+
+#model = keras.models.load_model(model_name, custom_objects={'loss': loss})
 
 
 """ Visualisation """
@@ -118,7 +136,7 @@ print("Score: ", score)
 
 y_test = predict_lightcurves(model, x_test, y_test)
 print(y_test)
-
+plt.show()
 
 
 """

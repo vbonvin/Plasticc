@@ -1,6 +1,6 @@
 import keras.backend as K
 from itertools import product
-
+import numpy as np
 
 """ Loss function definition """
 ##Personalised loss function , example taken from https://github.com/keras-team/keras/issues/2115
