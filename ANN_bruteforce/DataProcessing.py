@@ -22,7 +22,8 @@ def dataset_augmentation(data_start, bootstrapping = 1, epurate = 1, shuffle = T
         data = data.sample(frac=1)
     return data
 
-def dataset_zeropadding(data):
+
+def dataset_zeropadding(data, training=True):
     """
     Returns zeropadded and flattened dataset and labels. Essently converts panda data into numpy data and formats for keras.
     This is done without standardisation.
@@ -51,15 +52,23 @@ def dataset_zeropadding(data):
     #    zp_data, data.loc[:, [u'gal_b', u'gal_l', u'hostgal_photoz', u'hostgal_photoz_err', u'hostgal_specz']].values]
     ##Normalise data to be determined
     ##Load labels and convert to integer
-    labels = data.loc[:, [u'target']].values
-    labels = labels.flatten()
-    labels_name = np.array([6, 15, 16, 42, 52, 53, 62, 64, 65, 67, 88, 90, 92, 95, 99])
-    [np.place(labels, labels == labels_name[i], [i]) for i in range(len(labels_name))]
+    if training:
+        labels = data.loc[:, [u'target']].values
+        labels = labels.flatten()
+        labels_name = np.array([6, 15, 16, 42, 52, 53, 62, 64, 65, 67, 88, 90, 92, 95, 99])
+        [np.place(labels, labels == labels_name[i], [i]) for i in range(len(labels_name))]
     #print(zp_data.shape)
+    #load the id
+    if training:
+        return[zp_data,labels]
+    else:
+        identifier = data.loc[:, [u'object_id']].values
+        identifier = identifier.flatten()
+        return [zp_data, identifier]
+    return[zp_data,labels,id]
 
-    return[zp_data,labels]
 
-def dataset_zeropadding_3D(data):
+def dataset_zeropadding_3D(data, training=True):
     """
     Returns zeropadded and non-flattened dataset and labels. Essently converts panda data into numpy data and formats for keras.
     This is done without standardisation. Most for Recurent NN
@@ -78,12 +87,19 @@ def dataset_zeropadding_3D(data):
     zp_data = np.swapaxes(zp_data, 1, 2)
 
     ##Load labels and convert to integer
-    labels = data.loc[:, [u'target']].values
-    labels = labels.flatten()
-    labels_name = np.array([6, 15, 16, 42, 52, 53, 62, 64, 65, 67, 88, 90, 92, 95, 99])
-    [np.place(labels, labels == labels_name[i], [i]) for i in range(len(labels_name))]
-
-    return[zp_data,labels]
+    if training:
+        labels = data.loc[:, [u'target']].values
+        labels = labels.flatten()
+        labels_name = np.array([6, 15, 16, 42, 52, 53, 62, 64, 65, 67, 88, 90, 92, 95, 99])
+        [np.place(labels, labels == labels_name[i], [i]) for i in range(len(labels_name))]
+    #print(zp_data.shape)
+    #load the id
+    if training:
+        return[zp_data,labels]
+    else:
+        identifier = data.loc[:, [u'object_id']].values
+        identifier = identifier.flatten()
+        return [zp_data, identifier]
 def dataset_spl_zeropadding(data):
     """
     Same as above, but using the spl fit params instead of the jds, fluxes and errs.

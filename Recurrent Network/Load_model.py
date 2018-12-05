@@ -1,28 +1,13 @@
 import util
 import pandas as pd
-# TensorFlow and tf.keras
 import tensorflow as tf
 from tensorflow import keras
-import numpy as np
-import matplotlib.pyplot as plt
-from keras.utils import plot_model
-from ANN_bruteforce.DataProcessing import *
-from ANN_bruteforce.ResultAnalysis import predict_lightcurves
 from util import *
-from sklearn.preprocessing import QuantileTransformer
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import LSTM
-from keras.layers import GRU
-from keras.layers import RNN
-from keras.layers import Dropout
-import keras.backend as K
-from itertools import product
-from functools import partial
-from tensorflow.keras.models import load_model
 from sklearn.externals import joblib
 from keras.models import model_from_json
 
+from ANN_bruteforce.DataProcessing import *
+from ANN_bruteforce.ResultAnalysis import predict_lightcurves
 from Chris_ML_lib import compute_weights, w_categorical_crossentropy
 
 "Taken from https://machinelearningmastery.com/sequence-classification-lstm-recurrent-neural-networks-python-keras/"
