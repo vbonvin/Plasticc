@@ -34,15 +34,15 @@ def compute_weights(N_of_Classes, penalty_factor=20):
 "Taken from https://machinelearningmastery.com/sequence-classification-lstm-recurrent-neural-networks-python-keras/"
 
 # Recurrent Network
-model_name = "run_RecNN_LSTM_ncce_penalty20_Feat50_Dropout05_StandY_boot10_epu10_rmsprop_lr0.001_decay0.1"
+model_name = "LSTM_P20_Feat50_B0E0_Number5"
 
 """  Load Data """
-init_data = util.readpickle('../training_samples.pkl')
+init_data = util.readpickle('../training_samples_astest.pkl')
 data_start = init_data.loc[1000:].copy(deep=True)
 test = init_data.loc[:1000].copy(deep=True)
 
 #Dataset augmentation
-data = dataset_augmentation(data_start, bootstrapping=10, epurate=10)
+data = dataset_augmentation(data_start, bootstrapping=0, epurate=0)
 
 
 """ Data Preparation """
@@ -90,7 +90,7 @@ def w_categorical_crossentropy(y_true, y_pred, weights):
 N_of_Classes = np.array([151., 495., 924., 1193., 183., 30., 484., 102., 981.,  208., 370.,  2313.,  239., 175.])
 penalty_factor = 20
 
-w_array = compute_weights(N_of_Classes, penalty_factor=20)
+w_array = compute_weights(N_of_Classes, penalty_factor=penalty_factor)
 
 loss = lambda y_true, y_pred: w_categorical_crossentropy(y_true, y_pred, weights=w_array)
 
@@ -110,12 +110,13 @@ print(model.summary())
 tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/' + model_name, histogram_freq=0,
                                          write_graph=True, write_images=True)
 #Continue Training
-model.load_weights(model_name + '_model_weights.h5')
+interrupted_model_name = "LSTM_P20_Feat50_B0E0_Number3"
+model.load_weights(interrupted_model_name + '_model_weights.h5')
 
 modelcheckpointCallBack = keras.callbacks.ModelCheckpoint('weights{epoch:08d}.h5',
                                      save_weights_only=True, period=10)
 
-history = model.fit(x_train, y_train, epochs=10, validation_data=(x_test, y_test), batch_size=32, verbose=1,callbacks = [tbCallBack,modelcheckpointCallBack])
+history = model.fit(x_train, y_train, epochs=100, validation_data=(x_test, y_test), batch_size=32, verbose=1,callbacks = [tbCallBack,modelcheckpointCallBack])
 
 # serialize model to JSON
 model_json = model.to_json()

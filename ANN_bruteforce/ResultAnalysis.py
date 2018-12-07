@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from keras.utils import plot_model
 import itertools
-from DataProcessing import *
+from ANN_bruteforce.DataProcessing import *
 from util import *
 from tensorflow.keras.models import load_model
 from keras.callbacks import TensorBoard
