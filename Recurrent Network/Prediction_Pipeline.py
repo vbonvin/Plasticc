@@ -42,29 +42,29 @@ w_array = compute_weights(N_of_Classes, penalty_factor=20)
 
 loss = lambda y_true, y_pred: w_categorical_crossentropy(y_true, y_pred, weights=w_array)
 
-for name in pickle_list:
+name = sys.argv[1]
 
-    """ Data Preparation """
-    init_data = util.readpickle(pickle_path + '/' + name)
+""" Data Preparation """
+init_data = util.readpickle(pickle_path + '/' + name)
 
-    test_data = init_data.loc[:].copy(deep=True)
+test_data = init_data.loc[:].copy(deep=True)
 
-    [x_test, idn] = dataset_zeropadding_3D(test_data, training=False)
+[x_test, idn] = dataset_zeropadding_3D(test_data, training=False)
 
-    scaler = joblib.load(scaler_path)
-    for ii in range(len(scaler)):
-        x_test[:, ii, :] = scaler[ii].transform(x_test[:, ii, :])
+scaler = joblib.load(scaler_path)
+for ii in range(len(scaler)):
+    x_test[:, ii, :] = scaler[ii].transform(x_test[:, ii, :])
 
 
-    loss = lambda y_true, y_pred: w_categorical_crossentropy(y_true, y_pred, weights=w_array)
-    model.compile(loss=loss, optimizer='rmsprop', metrics=['accuracy'])
+loss = lambda y_true, y_pred: w_categorical_crossentropy(y_true, y_pred, weights=w_array)
+model.compile(loss=loss, optimizer='rmsprop', metrics=['accuracy'])
 
-    prediction = model.predict(x_test)
+prediction = model.predict(x_test)
 
-    idn = np.reshape(idn, (-1, 1))
+idn = np.reshape(idn, (-1, 1))
 
-    output = np.concatenate((np.array(idn), prediction), axis=1)
+output = np.concatenate((np.array(idn), prediction), axis=1)
 
-    np.savetxt(save_repertory + '/' + name[12:-4] + '.csv', output, delimiter=",")
-    np.save(save_repertory + '/' + name[12:-4], output)  # 12fortest
-    print ('csv')
+np.savetxt(save_repertory + '/' + name[12:-4] + '.csv', output, delimiter=",")
+np.save(save_repertory + '/' + name[12:-4], output)  # 12fortest
+print ('csv')
