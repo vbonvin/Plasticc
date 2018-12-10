@@ -34,12 +34,13 @@ def compute_weights(N_of_Classes, penalty_factor=20):
 "Taken from https://machinelearningmastery.com/sequence-classification-lstm-recurrent-neural-networks-python-keras/"
 
 # Recurrent Network
-model_name = "LSTM_P0_Feat50_B0E0"
+#model_name = "LSTM_P0_Feat30_B0E0"
+model_name = "LSTM_P0_Feat30_B0E0_Test4000_Nb2"
 
 """  Load Data """
 init_data = util.readpickle('../training_samples_astest.pkl')
-data_start = init_data.loc[1000:].copy(deep=True)
-test = init_data.loc[:1000].copy(deep=True)
+data_start = init_data.loc[4000:].copy(deep=True)
+test = init_data.loc[:4000].copy(deep=True)
 
 #Dataset augmentation
 data = dataset_augmentation(data_start, bootstrapping=0, epurate=0)
@@ -97,26 +98,26 @@ loss = lambda y_true, y_pred: w_categorical_crossentropy(y_true, y_pred, weights
 """ Model """
 
 model = Sequential()
-model.add(LSTM(50, input_shape=(80, zp_data.shape[2])))
+model.add(LSTM(30, input_shape=(80, zp_data.shape[2])))
 model.add(Dropout(0.5))
 #model.add(LSTM(20))
 #model.add(Dropout(0.5))
 model.add(Dense(15, activation='softmax'))
 rmsprop = keras.optimizers.RMSprop(lr=0.0001, decay=0.01)
-model.compile(loss=loss, optimizer='rmsprop', metrics=['accuracy'])
-#model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+#model.compile(loss=loss, optimizer='rmsprop', metrics=['accuracy'])
+model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 print(model.summary())
 
-tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/' + model_name, histogram_freq=0,
+tbCallBack = keras.callbacks.TensorBoard(log_dir='../ANN_bruteforce/logs/' + model_name, histogram_freq=0,
                                          write_graph=True, write_images=True)
 #Continue Training
-#interrupted_model_name = "LSTM_P20_Feat50_B0E0_Number3"
-#model.load_weights(interrupted_model_name + '_model_weights.h5')
+interrupted_model_name = "LSTM_P0_Feat30_B0E0_Test4000"
+model.load_weights(interrupted_model_name + '_model_weights.h5')
 
 modelcheckpointCallBack = keras.callbacks.ModelCheckpoint('weights{epoch:08d}.h5',
                                      save_weights_only=True, period=10)
 
-history = model.fit(x_train, y_train, epochs=200, validation_data=(x_test, y_test), batch_size=32, verbose=1,callbacks = [tbCallBack,modelcheckpointCallBack])
+history = model.fit(x_train, y_train, epochs=300, validation_data=(x_test, y_test), batch_size=64, verbose=1,callbacks = [tbCallBack,modelcheckpointCallBack])
 
 # serialize model to JSON
 model_json = model.to_json()
@@ -137,6 +138,9 @@ print("Score: ", score)
 
 y_test = predict_lightcurves(model, x_test, y_test)
 print(y_test)
+
+y_train = predict_lightcurves(model, x_train, y_train)
+print(y_train)
 plt.show()
 
 

@@ -15,16 +15,28 @@ import h5py
 from sklearn.externals import joblib
 from sklearn.preprocessing import QuantileTransformer
 
+#model_name = "ANN_P0_Feat960_240_60_B5E5"
+#model_name = "ANN_P0_Feat960_480_240_120_60_B5E5"
+#model_name = "ANN_P0_FeatX2_960_240_60_B5E5"
+
+#model_name = "ANN_P0_FeatX2_960_240_60_B10E0"
+#model_name = "ANN_P0_FeatX2_960_240_60_B5E5_D08"
+#model_name = "ANN_P0_FeatX4_960_240_60_B5E5"
+
+#model_name = "ANN_P20_Feat960_240_60_B5E5"
+
 if __name__ == "__main__":
     #Load Data
-    init_data = util.readpickle('training_samples_spl.pkl', py3=True)
+    init_data = util.readpickle('../training_samples_astest.pkl')
     data_start = init_data.loc[1000:].copy(deep=True)
     test = init_data.loc[:1000].copy(deep=True)
+
+    model_name = "ANN_P0_FeatX2_960_240_60_B5E5_D08"
 
     #Dataset augmentation
 
     # We will use the spl parameters, so no augmentation for the moment (would require recomputing new fitparams after bootstraping, takes a long time...)
-    data = dataset_augmentation(data_start, bootstrapping = 5)
+    data = dataset_augmentation(data_start, bootstrapping=10, epurate=0)
 
     #data = data.append(epurate_sample(data), ignore_index=True)
     print(data.loc[:].values.shape)
@@ -44,7 +56,7 @@ if __name__ == "__main__":
 
     #Playing around with normalisation -> works great http://scikit-learn.org/stable/auto_examples/preprocessing/plot_all_scaling.html#sphx-glr-auto-examples-preprocessing-plot-all-scaling-py
     scaler = QuantileTransformer(output_distribution='uniform').fit(zp_data)
-    joblib.dump(scaler, 'QuantileTransformer.pkl')
+    joblib.dump(scaler, model_name + '_scaler.pkl')
 
     zp_data = scaler.transform(zp_data)
     x_test = scaler.transform(x_test)
@@ -78,21 +90,22 @@ if __name__ == "__main__":
     """Network Architecture"""
 
     #Zeropadded ANN
+    mult_factor = 4
 
     model = keras.Sequential([
-        keras.layers.Dense(960*2, input_shape=(len(zp_data[0]),), activation=tf.nn.elu),
+        keras.layers.Dense(960*mult_factor, input_shape=(len(zp_data[0]),), activation=tf.nn.elu),
         keras.layers.BatchNormalization(),
         keras.layers.Dropout(0.5),
-        #keras.layers.Dense(480, activation=tf.nn.relu),
+        #keras.layers.Dense(480*2, activation=tf.nn.relu),
         #keras.layers.BatchNormalization(),
         #keras.layers.Dropout(0.5),
-        keras.layers.Dense(240*2, activation=tf.nn.elu),
+        keras.layers.Dense(240*mult_factor, activation=tf.nn.elu),
         keras.layers.BatchNormalization(),
         keras.layers.Dropout(0.5),
-        #keras.layers.Dense(120, activation=tf.nn.relu),
+        #keras.layers.Dense(120*2, activation=tf.nn.relu),
         #keras.layers.BatchNormalization(),
         #keras.layers.Dropout(0.5),
-        keras.layers.Dense(60*2, activation=tf.nn.elu),
+        keras.layers.Dense(60*mult_factor, activation=tf.nn.elu),
         keras.layers.BatchNormalization(),
         keras.layers.Dense(15, activation=tf.nn.softmax)
     ])
@@ -109,12 +122,19 @@ if __name__ == "__main__":
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
 
-    tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/run_bootstrap_5_ANN3layers_elu_noaddinfo', histogram_freq=0,
+    tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/' + model_name, histogram_freq=0,
               write_graph=True, write_images=True)
+    modelcheckpointCallBack = keras.callbacks.ModelCheckpoint('weights{epoch:08d}.h5',
+                                                              save_weights_only=True, period=10)
 
-    history = model.fit(x_train, y_train, epochs=50, validation_data=(x_test, y_test), batch_size=32, verbose=1,callbacks = [tbCallBack])
+    history = model.fit(x_train, y_train, epochs=50, validation_data=(x_test, y_test), batch_size=32, verbose=1,callbacks = [tbCallBack,modelcheckpointCallBack])
 
-    #model.save('ANN_3layers_model_standardised.h5')
+    # serialize model to JSON
+    model_json = model.to_json()
+    with open(model_name + "_model.json", "w") as json_file:
+        json_file.write(model_json)
+
+    model.save_weights(model_name + "_model_weights.h5")
 
     """Network Evaluation"""
 
@@ -123,3 +143,4 @@ if __name__ == "__main__":
 
     y_test = predict_lightcurves(model,x_test,y_test)
     print(y_test)
+    plt.show()

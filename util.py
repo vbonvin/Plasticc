@@ -89,7 +89,7 @@ def bootstrap_sample(sample, days_offset=5000):
 	return newsample
 
 
-def epurate_sample(sample, ep_percent=10):
+def epurate_sample(sample, ep_percent=30):
 	"""
 	Give me a pandas series, I return an epurated version of its light curves (I shoot some points)
 
