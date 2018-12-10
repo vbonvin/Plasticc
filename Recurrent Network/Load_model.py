@@ -13,10 +13,10 @@ from Chris_ML_lib import compute_weights, w_categorical_crossentropy
 "Taken from https://machinelearningmastery.com/sequence-classification-lstm-recurrent-neural-networks-python-keras/"
 
 # Recurrent Network
-model_name = "run_RecNN_LSTM_ncce_penalty20_Feat50_Dropout05_StandY_boot1_epu1_rmsprop_lr0.001_decay0.1"
+model_name = "LSTM_P0_Feat50_B0E0"
 
 """  Load Data """
-init_data = util.readpickle('../training_samples.pkl')
+init_data = util.readpickle('../training_samples_astest.pkl')
 data_start = init_data.loc[1000:].copy(deep=True)
 test = init_data.loc[:1000].copy(deep=True)
 
@@ -24,7 +24,7 @@ test = init_data.loc[:1000].copy(deep=True)
 
 [x_test, y_test] = dataset_zeropadding_3D(test)
 
-scaler = joblib.load('scaler.pkl')
+scaler = joblib.load(model_name + '_scaler.pkl')
 for ii in range(len(scaler)):
     x_test[:, ii, :] = scaler[ii].transform(x_test[:, ii, :])
 
@@ -41,12 +41,12 @@ w_array = compute_weights(N_of_Classes, penalty_factor=20)
 """ Model """
 
 # load json and create model
-json_file = open('model.json', 'r')
+json_file = open(model_name + '_model.json', 'r')
 loaded_model_json = json_file.read()
 json_file.close()
 loaded_model = model_from_json(loaded_model_json)
 # load weights into new model
-loaded_model.load_weights("model_weights.h5")
+loaded_model.load_weights(model_name + "_model_weights.h5")
 print("Loaded model from disk")
 
 
