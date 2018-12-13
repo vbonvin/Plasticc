@@ -27,37 +27,21 @@ from keras import constraints
 
 #model_name = "ANN_P20_Feat960_240_60_B5E5"
 
-class Generator_ANN(Sequence):
-
-    def __init__(self, data, labels, batch_size):
-        self.data, self.labels = data, labels
-        self.batch_size = batch_size
-
-    def __len__(self):
-        return np.ceil(len(self.data) / float(self.batch_size))
-
-    def __getitem__(self, idx):
-        batch_x = self.image_filenames[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_y = self.labels[idx * self.batch_size:(idx + 1) * self.batch_size]
-
-        return np.array([
-            resize(imread(file_name), (200, 200))
-                for file_name in batch_x]), np.array(batch_y)
-
-
-
 if __name__ == "__main__":
     #Load Data
     init_data = util.readpickle('../training_samples_astest.pkl')
     data_start = init_data.loc[3000:].copy(deep=True)
     test = init_data.loc[:3000].copy(deep=True)
 
-    #
+    #Parameters to be explored
 
-    model_name = "ANNX2_P0_5Layers_B5E5_V3000_KL001_BL001_UnitNorm"
-
+    Nb_Feature = 960
+    mult_factor = 4
     kernel_regularizer = 0.001
-    kernel_constraint = constraints.UnitNorm(axis=0)
+    kernel_constraint = constraints.MinMaxNorm(min_value=0.0, max_value=1.0, rate=1.0, axis=0)
+
+
+    model_name = "ANNX2_P0_5Layers_B5E5_V3000_KL01_BL01_MinMax"
 
     #Dataset augmentation
 
@@ -138,7 +122,7 @@ if __name__ == "__main__":
 
     ada = keras.optimizers.Adagrad(lr=0.01, epsilon=None, decay=0.01) #decay lr *= (1. / (1. + self.decay * self.iterations))
     rmsprop = keras.optimizers.RMSprop(lr=0.001, decay=0.01)
-    model.compile(optimizer=ada,
+    model.compile(optimizer=rmsprop,
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
 
@@ -147,7 +131,7 @@ if __name__ == "__main__":
     modelcheckpointCallBack = keras.callbacks.ModelCheckpoint('weights{epoch:08d}.h5',
                                                               save_weights_only=True, period=10)
 
-    history = model.fit(x_train, y_train, epochs=100, validation_data=(x_test, y_test), batch_size=512, verbose=1,callbacks = [tbCallBack,modelcheckpointCallBack])
+    history = model.fit(x_train, y_train, epochs=100, validation_data=(x_test, y_test), batch_size=32, verbose=1,callbacks = [tbCallBack,modelcheckpointCallBack])
 
     # serialize model to JSON
     model_json = model.to_json()

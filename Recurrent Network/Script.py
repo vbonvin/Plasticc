@@ -21,6 +21,8 @@ from itertools import product
 from functools import partial
 from tensorflow.keras.models import load_model
 from sklearn.externals import joblib
+from keras import regularizers
+from keras import constraints
 
 def compute_weights(N_of_Classes, penalty_factor=20):
     "Creating Weights: the critical and arbitrary factor is the penalty_factor"
@@ -35,15 +37,32 @@ def compute_weights(N_of_Classes, penalty_factor=20):
 
 # Recurrent Network
 #model_name = "LSTM_P0_Feat30_B0E0"
-model_name = "LSTM_P0_Feat30_B0E0_Test4000_Nb2"
+model_name = "LSTM_D60_P0_Feat40_B0E0_Test3000_KL0001_RL0001_BL0001_AL0001_Dr0_RDr_0_CstMinmax_Nb3"
+
+#model_name = "LSTM_P0_Feat
+feature_number = 40
+kernel_regularizer = 0.0001
+recurrent_regularizer = 0.0001
+bias_regularizer = 0.0001
+activity_regularizer = 0.0001
+kernel_constraint = constraints.MinMaxNorm(min_value=0.0, max_value=1.0, rate=1.0, axis=0)
+recurrent_constraint = constraints.MinMaxNorm(min_value=0.0, max_value=1.0, rate=1.0, axis=0)
+bias_constraint = constraints.MinMaxNorm(min_value=0.0, max_value=1.0, rate=1.0, axis=0)
+dropout = 0
+recurrent_dropout = 0
+
+bootstrapping = 0
+epurate = 0
+#model_name = model_name + str(feature_number) + "_B0E0_Test3000_KL" + str(kernel_regularizer)
+
 
 """  Load Data """
 init_data = util.readpickle('../training_samples_astest.pkl')
-data_start = init_data.loc[4000:].copy(deep=True)
-test = init_data.loc[:4000].copy(deep=True)
+data_start = init_data.loc[3000:].copy(deep=True)
+test = init_data.loc[:3000].copy(deep=True)
 
 #Dataset augmentation
-data = dataset_augmentation(data_start, bootstrapping=0, epurate=0)
+data = dataset_augmentation(data_start, bootstrapping=bootstrapping, epurate=epurate)
 
 
 """ Data Preparation """
@@ -98,10 +117,15 @@ loss = lambda y_true, y_pred: w_categorical_crossentropy(y_true, y_pred, weights
 """ Model """
 
 model = Sequential()
-model.add(LSTM(30, input_shape=(80, zp_data.shape[2])))
-model.add(Dropout(0.5))
-#model.add(LSTM(20))
+model.add(LSTM(40, input_shape=(80, zp_data.shape[2]), kernel_regularizer=regularizers.l2(kernel_regularizer),
+               recurrent_regularizer=regularizers.l2(recurrent_regularizer), bias_regularizer=regularizers.l2(bias_regularizer),
+               activity_regularizer=regularizers.l2(activity_regularizer), kernel_constraint=kernel_constraint, recurrent_constraint=recurrent_constraint,
+               bias_constraint=bias_constraint, dropout=dropout, recurrent_dropout=recurrent_dropout))
 #model.add(Dropout(0.5))
+keras.layers.Dense(60 , activation=tf.nn.elu, kernel_regularizer=regularizers.l2(kernel_regularizer),
+                   bias_regularizer=regularizers.l2(kernel_regularizer)),
+keras.layers.BatchNormalization(),
+keras.layers.Dropout(0.5),
 model.add(Dense(15, activation='softmax'))
 rmsprop = keras.optimizers.RMSprop(lr=0.0001, decay=0.01)
 #model.compile(loss=loss, optimizer='rmsprop', metrics=['accuracy'])
@@ -111,13 +135,13 @@ print(model.summary())
 tbCallBack = keras.callbacks.TensorBoard(log_dir='../ANN_bruteforce/logs/' + model_name, histogram_freq=0,
                                          write_graph=True, write_images=True)
 #Continue Training
-interrupted_model_name = "LSTM_P0_Feat30_B0E0_Test4000"
-model.load_weights(interrupted_model_name + '_model_weights.h5')
+interrupted_model_name = "LSTM_P0_Feat40_B0E0_Test3000_KL0001_RL0001_BL0001_AL0001_Dr02_RDr_02_Nb2"
+#model.load_weights(interrupted_model_name + '_model_weights.h5')
 
 modelcheckpointCallBack = keras.callbacks.ModelCheckpoint('weights{epoch:08d}.h5',
                                      save_weights_only=True, period=10)
 
-history = model.fit(x_train, y_train, epochs=300, validation_data=(x_test, y_test), batch_size=64, verbose=1,callbacks = [tbCallBack,modelcheckpointCallBack])
+history = model.fit(x_train, y_train, epochs=200, validation_data=(x_test, y_test), batch_size=256, verbose=1,callbacks = [tbCallBack,modelcheckpointCallBack])
 
 # serialize model to JSON
 model_json = model.to_json()
@@ -133,7 +157,7 @@ model.save_weights(model_name + "_model_weights.h5")
 
 """ Visualisation """
 
-score = model.evaluate(x_test, y_test, batch_size=10)
+score = model.evaluate(x_test, y_test, batch_size=64)
 print("Score: ", score)
 
 y_test = predict_lightcurves(model, x_test, y_test)
