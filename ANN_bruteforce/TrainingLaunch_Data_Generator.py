@@ -19,11 +19,39 @@ from keras import constraints
 
 ""
 
+class Data_Generator_ANN(keras.utils.Sequence):
+
+    def __init__(self, data, scaler, batch_size):
+        self.data = data
+        self.batch_size = batch_size
+        self.scaler = scaler
+
+    def __len__(self):
+        return int(np.ceil(len(self.data) / float(self.batch_size)))
+
+    def __getitem__(self, idx):
+        batch_x = self.data[idx * self.batch_size:(idx + 1) * self.batch_size]
+        #batch_y = self.labels[idx * self.batch_size:(idx + 1) * self.batch_size]
+
+        #Apply random data augmentation
+        batch_x = batch_x.apply(bootstrap_sample, axis=1)
+        batch_x = batch_x.apply(epurate_sample, axis=1)
+
+        # Zeropadded ANN
+        [batch_x, batch_y] = dataset_zeropadding(batch_x)
+        batch_x = self.scaler.transform(batch_x)
+
+        batch_y = keras.utils.to_categorical(batch_y, num_classes=15)
+
+
+        return batch_x, batch_y
+
+
 
 if __name__ == "__main__":
     #Load Data
     init_data = util.readpickle('../training_samples_astest.pkl')
-    data_start = init_data.loc[3000:].copy(deep=True)
+    data = init_data.loc[3000:].copy(deep=True)
     test = init_data.loc[:3000].copy(deep=True)
 
     #
@@ -39,23 +67,22 @@ if __name__ == "__main__":
     # -> Recurrent neural network https://en.wikipedia.org/wiki/Recurrent_neural_network
     # -> Recursive neural network
 
-    #Dataset augmentation
-    data = dataset_augmentation(data_start, bootstrapping=5, epurate=5)
-    print(data.loc[:].values.shape)
-
     #Zeropadded ANN
-    [zp_data,labels] = dataset_zeropadding(data)
+    [x_train,y_train] = dataset_zeropadding(data)
     [x_test,y_test] = dataset_zeropadding(test)
 
     #Playing around with normalisation -> works great http://scikit-learn.org/stable/auto_examples/preprocessing/plot_all_scaling.html#sphx-glr-auto-examples-preprocessing-plot-all-scaling-py
-    scaler = QuantileTransformer(output_distribution='uniform').fit(zp_data)
+    scaler = QuantileTransformer(output_distribution='uniform').fit(x_train)
     joblib.dump(scaler, model_name + '_scaler.pkl')
 
-    zp_data = scaler.transform(zp_data)
+    x_train = scaler.transform(x_train)
     x_test = scaler.transform(x_test)
 
-    x_train = zp_data
-    y_train = labels
+    batch_size = 128
+    #declare generator
+    train_data_generator = Data_Generator_ANN(data, scaler, batch_size)
+    print("Len generator",int(np.ceil(len(train_data_generator.data)/ float(train_data_generator.batch_size))))
+    print(train_data_generator.__getitem__(0))
 
     ##Convert labels to categorical one-hot encoding
     y_train = keras.utils.to_categorical(y_train, num_classes=15)
@@ -69,7 +96,7 @@ if __name__ == "__main__":
     mult_factor = 4
 
     model = keras.Sequential([
-        keras.layers.Dense(960*mult_factor, input_shape=(len(zp_data[0]),), activation=tf.nn.elu,
+        keras.layers.Dense(960*mult_factor, input_shape=(len(x_train[0]),), activation=tf.nn.elu,
                            kernel_regularizer=regularizers.l2(kernel_regularizer),
                            bias_regularizer=regularizers.l2(kernel_regularizer), kernel_constraint = kernel_constraint,
                            bias_constraint = kernel_constraint),
@@ -114,7 +141,8 @@ if __name__ == "__main__":
     modelcheckpointCallBack = keras.callbacks.ModelCheckpoint('weights{epoch:08d}.h5',
                                                               save_weights_only=True, period=10)
 
-    history = model.fit(x_train, y_train, epochs=100, validation_data=(x_test, y_test), batch_size=512, verbose=1,callbacks = [tbCallBack,modelcheckpointCallBack])
+    history = model.fit_generator(generator=train_data_generator, epochs=100, use_multiprocessing=True,
+                    workers=8, validation_data=(x_test, y_test), verbose=1, callbacks=[tbCallBack,modelcheckpointCallBack])
 
     # serialize model to JSON
     model_json = model.to_json()
